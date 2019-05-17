@@ -79,11 +79,11 @@ class ConvAutoencoder(object):
                                    callbacks=[TensorBoard(log_dir=LOG_DIR)])
 
         print("save weights to:", model_path(LOG_DIR, 'convolutional_autoencoder.h5'))
-        self.autoencoder_model.save_weights(model_path(LOG_PATH, 'convolutional_autoencoder.h5'))
+        self.autoencoder_model.save_weights(model_path(LOG_DIR, 'convolutional_autoencoder.h5'))
         print('training completed!')
 
     def inference(self, x_test):
-        self.autoencoder_model.load_weights(model_path(LOG_PATH, 'convolutional_autoencoder.h5'))
+        self.autoencoder_model.load_weights(model_path(LOG_DIR, 'convolutional_autoencoder.h5'))
         decoded_img = autoencoder.predict(test_data)
         # visualize results
         n = 5
