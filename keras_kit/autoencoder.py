@@ -3,8 +3,10 @@ import os
 from keras.layers import Input, Dense
 from keras.models import Model
 from keras.datasets import mnist
+import matplotlib.pyplot as plt
 
 LOG_DIR = os.path.join('./', 'log')
+# DATA_DIR = '../../Dataset/mnist.npz'
 
 def model_path(basepath, filename):
     if not os.path.exists(basepath):
@@ -53,3 +55,7 @@ autoencoder.save(model_path(LOG_DIR, 'autoencoder.h5'))   # HDF5 file, you have 
 encoded_img = encoder.predict(x_test)
 decoded_img = decoder.predict(encoded_img)
 
+n = 10
+plt.figure(figsize=(20, 4))
+for i in range(n):
+    ax = plt.subplot(2, n, i + 1)
