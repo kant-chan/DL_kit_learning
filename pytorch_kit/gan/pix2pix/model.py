@@ -59,12 +59,12 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         self.down1 = UNetDown(in_channels, 64, normalize=False)
         self.down2 = UNetDown(64, 128)
-        self.down3 = UNetDown(218, 256)
+        self.down3 = UNetDown(128, 256)
         self.down4 = UNetDown(256, 512, dropout=0.5)
         self.down5 = UNetDown(512, 512, dropout=0.5)
         self.down6 = UNetDown(512, 512, dropout=0.5)
         self.down7 = UNetDown(512, 512, dropout=0.5)
-        self.dowm8 = UNetDown(512, 512, dropout=0.5, normalize=False)
+        self.down8 = UNetDown(512, 512, dropout=0.5, normalize=False)
 
         self.up1 = UNetUp(512, 512, dropout=0.5)
         self.up2 = UNetUp(1024, 512, dropout=0.5)
@@ -122,7 +122,7 @@ class Discriminator(nn.Module):
             *discriminator_block(64, 128),
             *discriminator_block(128, 256),
             *discriminator_block(256, 512),
-            nn.ZeroPad2d(1, 0, 1, 0),
+            nn.ZeroPad2d((1, 0, 1, 0)),
             nn.Conv2d(512, 1, 4, padding=1, bias=False)
         )
 

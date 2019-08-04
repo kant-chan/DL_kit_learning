@@ -39,5 +39,5 @@ if __name__ == '__main__':
     w, h = im.size
     mode = im.mode
     print(w, h, mode)
-    im_np = np.array(im)
+    im_np = np.array(im)[:, ::-1, :]
     print(im_np.shape)

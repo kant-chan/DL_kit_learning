@@ -13,3 +13,5 @@ data/
 model/
 samples/
 .ipynb_checkpoints/
+images/
+saved_models/

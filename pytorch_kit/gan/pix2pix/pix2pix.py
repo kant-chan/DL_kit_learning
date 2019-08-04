@@ -2,10 +2,12 @@ import os, sys, math
 import time, datetime
 import itertools
 import numpy as np
+from PIL import Image
 import torch
 import torchvision
 import torch.nn as nn
 import torchvision.transforms as transforms
+from torchvision.utils import save_image
 
 from datasets import ImageDataset
 from model import *
@@ -39,7 +41,7 @@ lambda_pixel = 100
 # calculate output of image discriminator (PatchGAN)
 patch = (1, img_height // 16, img_width // 16)
 
-generator = GeneratorUNet().to(device)
+generator = Generator().to(device)
 discriminator = Discriminator().to(device)
 
 # init param
@@ -60,8 +62,8 @@ transforms_ = [
 
 dataloader = torch.utils.data.DataLoader(
     ImageDataset('../../data/{}'.format(dataset_name), transforms_=transforms_),
-    batch_size=batch_size
-    shuffle=True
+    batch_size=batch_size,
+    shuffle=True,
     num_workers=n_cpu
 )
 val_dataloader = torch.utils.data.DataLoader(
@@ -71,17 +73,62 @@ val_dataloader = torch.utils.data.DataLoader(
     num_workers=1
 )
 
-for epch in range(epoch, n_epochs):
+def sample_images(batches_done):
+    """Saves a generated sample from the validation set"""
+    imgs = next(iter(val_dataloader))
+    real_a, real_b = batch['img_b'], batch['img_a']
+    fake_b = generator(real_a)
+    img_sample = torch.cat((real_a.data, fake_b.data, real_b.data), -2)
+    save_image(img_sample, "images/%s/%s.png" % (dataset_name, batches_done), nrow=5, normalize=True)
+
+for epch in range(epoch, 1):
     for i, batch in enumerate(dataloader):
         real_a, real_b = batch['img_b'], batch['img_a']
         real_a, real_b = real_a.to(device), real_b.to(device)
-
+        print(real_a.size())
         valid = torch.ones(real_a.size(0), *patch, requires_grad=True)
         fake = torch.zeros(real_b.size(0), *patch, requires_grad=True)
+        if i == 1:
+            break
 
         ##### train generator
         optimizer_G.zero_grad()
         fake_b = generator(real_a)
         pred_fake = discriminator(fake_b, real_a)
-        loss_GAN = criterion_GAN(fake_b, real_a)
+        loss_GAN = criterion_GAN(pred_fake, valid)
         loss_pixel = criterion_pixelwise(fake_b, real_b)
+        loss_G = loss_GAN + lambda_pixel * loss_pixel
+        loss_G.backward()
+        optimizer_G.step()
+
+        ##### train discriminator
+        optimizer_D.zero_grad()
+        pred_real = discriminator(real_b, real_a)
+        loss_real = criterion_GAN(pred_real, valid)
+        pred_fake = discriminator(fake_b.detach(), real_a)
+        loss_fake = criterion_GAN(pred_fake, fake)
+        loss_D = 0.5 * (loss_real + loss_fake)
+        loss_D.backward()
+        optimizer_D.step()
+
+        sys.stdout.write(
+            '\r[Epoch {}/{}] [Batch {}/{}] [D loss: {}] [G loss: {}, pixel: {}, adv: {}]'
+                .format(
+                    epch,
+                    n_epochs,
+                    i,
+                    len(dataloader),
+                    loss_D.item(),
+                    loss_G.item(),
+                    loss_pixel.item(),
+                    loss_GAN.item()
+                )
+        )
+        # If at sample interval save image
+        batches_done = epch * len(dataloader) + i
+        if batches_done % sample_interval == 0:
+            sample_images(batches_done)
+
+    if checkpoint_interval != -1 and epch % checkpoint_interval == 0:
+        torch.save(generator.state_dict(), "saved_models/%s/generator_%d.pth" % (dataset_name, epch))
+        torch.save(discriminator.state_dict(), "saved_models/%s/discriminator_%d.pth" % (dataset_name, epch))
