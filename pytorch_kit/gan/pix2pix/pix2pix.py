@@ -77,19 +77,18 @@ def sample_images(batches_done):
     """Saves a generated sample from the validation set"""
     imgs = next(iter(val_dataloader))
     real_a, real_b = batch['img_b'], batch['img_a']
+    real_a, real_b = real_a.to(device), real_b.to(device)
     fake_b = generator(real_a)
     img_sample = torch.cat((real_a.data, fake_b.data, real_b.data), -2)
     save_image(img_sample, "images/%s/%s.png" % (dataset_name, batches_done), nrow=5, normalize=True)
 
-for epch in range(epoch, 1):
+for epch in range(epoch, n_epochs):
     for i, batch in enumerate(dataloader):
         real_a, real_b = batch['img_b'], batch['img_a']
         real_a, real_b = real_a.to(device), real_b.to(device)
-        print(real_a.size())
-        valid = torch.ones(real_a.size(0), *patch, requires_grad=True)
-        fake = torch.zeros(real_b.size(0), *patch, requires_grad=True)
-        if i == 1:
-            break
+        # print(real_a.size())
+        valid = torch.ones(real_a.size(0), *patch, requires_grad=True).to(device)
+        fake = torch.zeros(real_b.size(0), *patch, requires_grad=True).to(device)
 
         ##### train generator
         optimizer_G.zero_grad()
@@ -111,8 +110,10 @@ for epch in range(epoch, 1):
         loss_D.backward()
         optimizer_D.step()
 
-        sys.stdout.write(
-            '\r[Epoch {}/{}] [Batch {}/{}] [D loss: {}] [G loss: {}, pixel: {}, adv: {}]'
+        # sys.stdout.write()
+        # sys.stdout.flush()
+        print(
+            'Epoch [{}/{}], Batch [{}/{}], D loss: {:.6f} G loss: {:.6f}, pixel: {:.6f}, adv: {:.6f}]'
                 .format(
                     epch,
                     n_epochs,
