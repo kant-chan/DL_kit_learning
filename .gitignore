@@ -1,17 +1,10 @@
 data/
-dataset/
 
 .vscode
 .DS_Store
 bin/
-log/
 
 __pycache__
 *.pyc
 
-data/
-model/
-samples/
 .ipynb_checkpoints/
-images/
-saved_models/
