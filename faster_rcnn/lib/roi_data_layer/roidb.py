@@ -7,4 +7,8 @@ from model.utils.config import cfg
 
 
 def combined_roidb(imdb_names, training=True):
-    pass
+    '''
+    combine multiple roidb
+    '''
+    def get_roidb(imdb_name):
+        imdb = get_imdb(imdb_name)
