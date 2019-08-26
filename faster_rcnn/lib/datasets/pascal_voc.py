@@ -20,8 +20,8 @@ import xml.etree.ElementTree as ET
 import pickle
 from .imdb import imdb
 from .imdb import ROOT_DIR
-from . import ds_utils
-from .voc_eval import voc_eval
+# from . import ds_utils
+# from .voc_eval import voc_eval
 
 # TODO: make fast_rcnn irrelevant
 # >>>> obsolete, because it depends on sth outside of this project
@@ -31,11 +31,12 @@ from model.utils.config import cfg
 class pascal_voc(imdb):
     def __init__(self, image_set, year, devkit_path=None):
         imdb.__init__(self, 'voc_' + year + '_' + image_set)
-        self._year = year
-        self._image_set = image_set
-        # os.path.join(cfg.DATA_DIR, 'VOCdevkit' + self._year)
+        self._year = year # 2007
+        self._image_set = image_set # trainval
+        # data/VOCdevkit2007
         self._devkit_path = self._get_default_path() if devkit_path is None \
             else devkit_path
+        # data/VOCdevkit2007/VOC2007
         self._data_path = os.path.join(self._devkit_path, 'VOC' + self._year)
         self._classes = ('__background__',  # always index 0
                          'aeroplane', 'bicycle', 'bird', 'boat',
@@ -43,7 +44,15 @@ class pascal_voc(imdb):
                          'cow', 'diningtable', 'dog', 'horse',
                          'motorbike', 'person', 'pottedplant',
                          'sheep', 'sofa', 'train', 'tvmonitor')
-        self._class_to_ind = dict(zip(self.classes, xrange(self.num_classes)))
+        '''
+        {
+            '__background__': 0,
+            'aeroplane': 1,
+            'bicycle': 2,
+            ...
+        }
+        '''
+        self._class_to_ind = dict(zip(self.classes, range(self.num_classes)))
         self._image_ext = '.jpg'
         self._image_index = self._load_image_set_index()
         # Default to roidb handler
@@ -92,13 +101,14 @@ class pascal_voc(imdb):
         Load the indexes listed in this dataset's image set file.
         """
         # Example path to image set file:
-        # self._devkit_path + /VOCdevkit2007/VOC2007/ImageSets/Main/val.txt
+        # self._devkit_path + /VOCdevkit2007/VOC2007/ImageSets/Main/trainval.txt
         image_set_file = os.path.join(self._data_path, 'ImageSets', 'Main',
                                       self._image_set + '.txt')
         assert os.path.exists(image_set_file), \
             'Path does not exist: {}'.format(image_set_file)
         with open(image_set_file) as f:
             image_index = [x.strip() for x in f.readlines()]
+        # [000001, 00000045, ...], the image name
         return image_index
 
     def _get_default_path(self):
@@ -199,6 +209,7 @@ class pascal_voc(imdb):
         Load image and bounding boxes info from XML file in the PASCAL VOC
         format.
         """
+        # data/VOCdevkit2007/VOC2007/Annotations/${index}.xml
         filename = os.path.join(self._data_path, 'Annotations', index + '.xml')
         tree = ET.parse(filename)
         objs = tree.findall('object')
@@ -240,6 +251,15 @@ class pascal_voc(imdb):
 
         overlaps = scipy.sparse.csr_matrix(overlaps)
 
+        '''
+        {
+            'boxes': (num_objs, 4),
+            'gt_classes': (num_objs),
+            'gt_overlaps': (num_objs, num_classes),
+            'seg_areas': (num_objs),
+            'gt_ishards': (num_objs)
+        }
+        '''
         return {'boxes': boxes,
                 'gt_classes': gt_classes,
                 'gt_ishard': ishards,
