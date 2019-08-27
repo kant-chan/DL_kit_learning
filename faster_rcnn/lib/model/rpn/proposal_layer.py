@@ -39,5 +39,6 @@ class _ProposalLayer(nn.Module):
 
         shift_x = np.arange(0, feat_width) * self._feat_stride
         shift_y = np.arange(0, feat_height) * self._feat_stride
+        shift_x, shift_y = np.meshgrid(shift_x, shift_y)
 
         
