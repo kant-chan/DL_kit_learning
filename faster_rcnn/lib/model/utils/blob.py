@@ -12,7 +12,7 @@ import numpy as np
 import cv2
 
 
-def pre_im_for_blob(im, pixel_means, target_size, max_size):
+def prep_im_for_blob(im, pixel_means, target_size, max_size):
     '''mean subtract and scale an image for use in a blob
     '''
     im = im.astype(np.float32, copy=False)
@@ -23,7 +23,7 @@ def pre_im_for_blob(im, pixel_means, target_size, max_size):
     im_scale = float(target_size) / float(im_size_min)
 
     im = cv2.resize(im, None, None, fx=im_scale, fy=im_scale, interpolation=cv2.INTER_LINEAR)
-
+    # print('===>', np.max(im))  # 152.0199
     return im, im_scale
 
 def im_list_to_blob(ims):

@@ -18,7 +18,7 @@ def get_minibatch(roidb, num_classes):
     '''Given aa roidb, construct a minibatch sampled from it
     '''
     num_images = len(roidb)
-    random_scale_inds = np.random.randint(0, high=len(cfg.TRAIN.SCALES), size=num_images)
+    random_scale_inds = np.random.randint(0, high=len(cfg.TRAIN.SCALES), size=num_images)  # [0]
     assert cfg.TRAIN.BATCH_SIZE % num_images == 0, \
         'num_iamges ({}) must divide BATCH_SIZE ({})'.format(num_images, cfg.TRAIN.BATCH_SIZE)
 
@@ -54,7 +54,7 @@ def _get_image_blob(roidb, scale_inds):
     processed_ims = []
     im_scales = []
     for i in range(num_images):
-        im = imread(roidb[i]['image'])
+        im = imread(roidb[i]['image'])   # im.shape -> (h,w,c)   type(im) -> np.array   dtype -> uint8
 
         if len(im.shape) == 2:
             im = im[:,:,np.newaxis]
@@ -67,7 +67,7 @@ def _get_image_blob(roidb, scale_inds):
             im = im[:,::-1,:]
         
         target_size = cfg.TRAIN.SCALES[scale_inds[i]]
-        # array([[[102.9801, 115.9465, 122.7717]]])   1000
+        # array([[[102.9801, 115.9465, 122.7717]]])  600  1000
         im, im_scale = prep_im_for_blob(im, cfg.PIXEL_MEANS, target_size, cfg.TRAIN.MAX_SIZE)
 
         im_scales.append(im_scale)
@@ -75,5 +75,6 @@ def _get_image_blob(roidb, scale_inds):
 
     blob = im_list_to_blob(processed_ims)
 
+    # print('===>', blob.shape, im_scale)  # (1, 600, 800, 3) 1.6
     return blob, im_scales
 

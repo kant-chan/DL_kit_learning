@@ -9,13 +9,14 @@ import torch
 import torchvision
 import torch.nn as nn
 from torch.utils.data.sampler import Sampler
-
+from torch.utils.data import DataLoader
 
 # custom module
 from model.utils.config import cfg, cfg_from_file, cfg_from_list
 from roi_data_layer.roidb import combined_roidb
 from roi_data_layer.roibatch_loader import RoibatchLoader
-from torch.utils.data import DataLoader
+from model.faster_rcnn.vgg16 import vgg16
+from model.faster_rcnn.resnet import resnet
 
 ###### test ######
 
@@ -78,6 +79,24 @@ def parse_args():
         help='number of worker to load data',
         default=0,
         type=int)
+    parser.add_argument('--class_agnostic',
+        dest='class_agnostic',
+        help='whether perform class_agnostic bbox regression',
+        action='store_true')
+    parser.add_argument('--lr',
+        dest='lr',
+        help='starting learning rate',
+        default=0.001,
+        type=float)
+    parser.add_argument('--lr_decay_step',
+        dest='lr_decay_step',
+        help='step to do learning rate decay, unit is epoch',
+        default=5, type=int)
+    parser.add_argument('--lr_decay_gamma',
+        dest='lr_decay_gamma',
+        help='learning rate decay ratio',
+        default=0.1,
+        type=float)
 
     args = parser.parse_args()
     return args
@@ -107,6 +126,7 @@ if __name__ == '__main__':
 
     if torch.cuda.is_available() and not args.cuda:
         print('WARNING: CUDA is available, run with --cuda')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     cfg.USE_GPU_NMS = args.cuda
 
@@ -132,13 +152,39 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset, batch_size=args.batch_size,
                             sampler=sampler_batch, num_workers=args.num_workers)
 
-    for i in dataloader:
-        print('fuuuuuuuuuuuuuuuuuuk')
+    if args.cuda:
+        cfg.CUDA = True
     
+    if args.net == 'vgg16':
+        fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
+    elif args.net == 'res101':
+        fasterRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
+    elif args.net == 'res50':
+        fasterRCNN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
+    elif args.net == 'res152':
+        fasterRCNN = resnet(imdb.classes, 152, pretrained=True, class_agnostic=args.class_agnostic)
+    else:
+        print('network is not defined')
+
+    fasterRCNN.create_architecture()
+
+    lr = cfg.TRAIN.LEARNING_RATE
+    lr = args.lr
+
+    params = []
 
     ########## test
-    # sample_batch = sampler(10022, 16)
-    # for i, sam in enumerate(sample_batch):
-    #     if i < 2:
+    print('==========> test')
+    for i, v in enumerate(dataloader):
+        if i == 0:
+            print(v[0].size()) # padding_data
+            print(v[1])        # im_info
+            print(v[2].size())        # gt_boxes
+            print(v[3])        # num_boxes
+            break
+    # for i, sam in enumerate(sampler_batch):
+    #     if i == 0:
     #         print(sam, sam.size())
+    #         break
+    print('==========> test end')
     ###############
