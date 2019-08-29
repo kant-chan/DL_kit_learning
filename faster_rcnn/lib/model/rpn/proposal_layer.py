@@ -4,7 +4,7 @@ import torch
 from model.utils.config import cfg
 from .generate_anchors import generate_anchors
 from .bbox_transform import bbox_transform_inv, clip_boxes
-from model.roi_layers import nms
+from model.nms import nms
 
 
 class _ProposalLayer(nn.Module):
@@ -26,7 +26,7 @@ class _ProposalLayer(nn.Module):
         '''
         # bg->[0:9] fg->[9:18]
         scores = inpt[0][:,self._num_anchors:,:,:]  # (batch_size, 9, H, W)
-        bbox_deltas = inpt[1]
+        bbox_deltas = inpt[1]                       # (batch_size, 36, H, W)
         im_info = inpt[2]
         cfg_key = inpt[3]
 
@@ -76,11 +76,11 @@ class _ProposalLayer(nn.Module):
         # to get them into the same order as the anchors
         # original shape (batch_size, 36, H, W)
         bbox_deltas = bbox_deltas.permute(0, 2, 3, 1).contiguous() # (batch_size, H, W, 36)
-        bbox_deltas = bbox_deltas.view(batch_size, -1, 4)
+        bbox_deltas = bbox_deltas.view(batch_size, -1, 4)          # (batch_size, H*W*9, 4)
 
         # same story for the scores:
         scores = scores.permute(0, 2, 3, 1).contiguous() # (batch_size, H, W, 9)
-        scores = scores.view(batch_size, -1)
+        scores = scores.view(batch_size, -1)             # (batch_size, H*W*9)
 
         # convert anchors into proposals via bbox transformations
         proposals = bbox_transform_inv(anchors, bbox_deltas)
@@ -95,8 +95,8 @@ class _ProposalLayer(nn.Module):
 
         output = scores.new(batch_size, post_nms_topN, 5).zero_()
         for i in range(batch_size):
-            proposals_single = proposals_keep[i]
-            scores_single = scores_keep[i]
+            proposals_single = proposals_keep[i]  # (H*W*9, 4)
+            scores_single = scores_keep[i]        # (H*W*9,)
             order_single = order[i]
 
             # bellow line scores_keep.numel() error ?
@@ -111,6 +111,19 @@ class _ProposalLayer(nn.Module):
             # - take after_nms_topN (e.g. 300)
             # - return the top proposals (-> RoIs top)
             keep_idx_i = nms(proposals_single, scores_single.squeeze(1), nms_thresh)
+            keep_idx_i = keep_idx_i.long().view(-1)
+
+            if post_nms_topN > 0:
+                keep_idx_i = keep_idx_i[:,post_nms_topN]
+            proposals_single = proposals_single[keep_idx_i,:]
+            scores_single = scores_single[keep_idx_i,:]
+
+            # padding 0 at the end
+            num_proposal = proposals_single.size(0)
+            output[i,:,0] = i
+            output[i,:num_proposal,1:] = proposals_single
+        
+        return output
 
     def _filter_boxes(self, boxes, min_size):
         '''remove all boxes with any side smaller than min_size
