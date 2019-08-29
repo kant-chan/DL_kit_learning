@@ -17,12 +17,14 @@ def nms(bboxes, scores, threshhold=0.5):
     keep_idx = []
     areas = (x2 - x1) * (y2 - y1)  # (topN, )
     while all_index.numel() > 0:
-        i = all_index[0]
-        keep_idx.append(i)
-
         if all_index.numel() == 1:
+            i = all_index.item()
+            keep_idx.append(i)
             break
-        
+        else:
+            i = all_index[0].item()
+            keep_idx.append(i)
+
         ix1 = x1[all_index[1:]].clamp(min=x1[i])  # (topN-1, )
         ix2 = x2[all_index[1:]].clamp(max=x2[i])
         iy1 = y1[all_index[1:]].clamp(min=y1[i])
@@ -64,9 +66,9 @@ if __name__ == '__main__':
                       [166, 70, 312, 190],
                       [28, 130, 134, 302]])
     scores = np.array([0.9, 0.79, 0.63, 0.55, 0.3])
-    display(boxes)
+    # display(boxes)
     t_boxes = torch.from_numpy(boxes)
     t_scores = torch.from_numpy(scores)
-    thresh = 0.1
+    thresh = 0.5
     keep_ids = nms(t_boxes, t_scores, thresh)
     display(boxes[keep_ids.numpy()])
