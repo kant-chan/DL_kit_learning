@@ -34,9 +34,13 @@ class _AnchorTargetLayer(nn.Module):
         im_info = inpt[2]
         num_boxes = inpt[3]
 
-        height, width = rpn_cls_score.size(2), rpn_cls_score.size(3)
+        height = rpn_cls_score.size(2)
+        width = rpn_cls_score.size(3)
         batch_size = gt_boxes.size(0)
-        feat_height, feat_width = rpn_cls_score.size(2), rpn_cls_score.size(3)
+
+        feat_height = rpn_cls_score.size(2)
+        feat_width = rpn_cls_score.size(3)
+
         shift_x = np.arange(0, feat_width) * self._feat_stride
         shift_y = np.arange(0, feat_height) * self._feat_stride
         shift_x, shift_y = np.meshgrid(shift_x, shift_y)
@@ -62,21 +66,22 @@ class _AnchorTargetLayer(nn.Module):
 
         inds_inside = torch.nonzero(keep).view(-1)
 
-        # keep only inside anchors
-        anchors = all_anchors[inds_inside, :]
+        # keep only inside anchors, this generated anchors
+        anchors = all_anchors[inds_inside,:]
 
         # label: 1 is positive, 0 is negative, -1 is dont care
-        labels = gt_boxes.new(batch_size, inds_inside.size(0)).fill_(-1)
+        labels = gt_boxes.new(batch_size, inds_inside.size(0)).fill_(-1)  #(batch_size, N) N->anchors_num
         bbox_inside_weights = gt_boxes.new(batch_size, inds_inside.size(0)).zero_()
         bbox_outside_weights = gt_boxes.new(batch_size, inds_inside.size(0)).zero_()
 
-        overlaps = bbox_overlaps_batch(anchors, gt_boxes)
+        # example: one row is one anchor IOU all gt_boxes
+        overlaps = bbox_overlaps_batch(anchors, gt_boxes)  #(batch_size, N, K)
 
         max_overlaps, argmax_overlaps = torch.max(overlaps, 2)
-        gt_max_overlaps, _ = torch.max(overlaps, 1)
+        gt_max_overlaps, _ = torch.max(overlaps, 1)  #(batch_size, K)
 
         if not cfg.TRAIN.RPN_CLOBBER_POSITIVES:
-            labels[max_overlaps < cfg.TRAIN.RPN_NEGATIVE_OVERLAP] = 0
+            labels[max_overlaps < cfg.TRAIN.RPN_NEGATIVE_OVERLAP] = 0  #0.3
 
         gt_max_overlaps[gt_max_overlaps==0] = 1e-5
         keep = torch.sum(overlaps.eq(gt_max_overlaps.view(batch_size,1,-1).expand_as(overlaps)), 2)
@@ -85,12 +90,12 @@ class _AnchorTargetLayer(nn.Module):
             labels[keep>0] = 1
 
         # fg label: above threshold IOU
-        labels[max_overlaps >= cfg.TRAIN.RPN_POSITIVE_OVERLAP] = 1
+        labels[max_overlaps >= cfg.TRAIN.RPN_POSITIVE_OVERLAP] = 1  #0.7
 
         if cfg.TRAIN.RPN_CLOBBER_POSITIVES:
             labels[max_overlaps < cfg.TRAIN.RPN_NEGATIVE_OVERLAP] = 0
 
-        num_fg = int(cfg.TRAIN.RPN_FG_FRACTION * cfg.TRAIN.RPN_BATCHSIZE)
+        num_fg = int(cfg.TRAIN.RPN_FG_FRACTION * cfg.TRAIN.RPN_BATCHSIZE)  #0.5 * 256
 
         sum_fg = torch.sum((labels == 1).int(), 1)
         sum_bg = torch.sum((labels == 0).int(), 1)
@@ -119,13 +124,13 @@ class _AnchorTargetLayer(nn.Module):
                 disable_inds = bg_inds[rand_num[:bg_inds.size(0)-num_bg]]
                 labels[i][disable_inds] = -1
 
-        offset = torch.arange(0, batch_size)*gt_boxes.size(1)
+        offset = torch.arange(0, batch_size) * gt_boxes.size(1)
 
         argmax_overlaps = argmax_overlaps + offset.view(batch_size, 1).type_as(argmax_overlaps)
         bbox_targets = _compute_targets_batch(anchors, gt_boxes.view(-1,5)[argmax_overlaps.view(-1), :].view(batch_size, -1, 5))
 
         # use a single value instead of 4 values for easy index.
-        bbox_inside_weights[labels==1] = cfg.TRAIN.RPN_BBOX_INSIDE_WEIGHTS[0]
+        bbox_inside_weights[labels==1] = cfg.TRAIN.RPN_BBOX_INSIDE_WEIGHTS[0]  #1.0
 
         if cfg.TRAIN.RPN_POSITIVE_WEIGHT < 0:
             num_examples = torch.sum(labels[i] >= 0)

@@ -38,8 +38,7 @@ def bbox_transform_batch(ex_rois, gt_rois):
     else:
         raise ValueError('ex_roi input dimension is not correct.')
 
-    targets = torch.stack(
-        (targets_dx, targets_dy, targets_dw, targets_dh),2)
+    targets = torch.stack((targets_dx, targets_dy, targets_dw, targets_dh), 2)
 
     return targets
 
@@ -120,26 +119,30 @@ def bbox_overlaps_batch(anchors, gt_boxes):
         N = anchors.size(0)
         K = gt_boxes.size(1)
 
-        anchors = anchors.view(1, N, 4).expand(batch_size, N, 4).contiguous()
-        anchors_boxes_w = anchors[:,:,2] - anchors[:,:,0] + 1
+        anchors = anchors.view(1, N, 4).expand(batch_size, N, 4).contiguous()        #(batch_size, N, 4)
+        anchors_boxes_w = anchors[:,:,2] - anchors[:,:,0] + 1                        #(batch_size, N)
         anchors_boxes_h = anchors[:,:,3] - anchors[:,:,1] + 1
-        anchors_area = (anchors_boxes_w * anchors_boxes_h).view(batch_size, N, 1)
+        anchors_area = (anchors_boxes_w * anchors_boxes_h).view(batch_size, N, 1)    #(batch_size, N, 1)
         
-        gt_boxes = gt_boxes[:,:,:4].contiguous()
-        gt_boxes_w = gt_boxes[:,:,2] - gt_boxes[:,:,0] + 1
+        gt_boxes = gt_boxes[:,:,:4].contiguous()                           #(batch_size, K, 4)
+        gt_boxes_w = gt_boxes[:,:,2] - gt_boxes[:,:,0] + 1                 #(batch_size, K)
         gt_boxes_h = gt_boxes[:,:,3] - gt_boxes[:,:,1] + 1
-        gt_boxes_area = (gt_boxes_w * gt_boxes_h).view(batch_size, 1, K)
+        gt_boxes_area = (gt_boxes_w * gt_boxes_h).view(batch_size, 1, K)   #(batch_size, 1, K)
+
+        anchors_area_zero = (anchors_boxes_w == 1) & (anchors_boxes_h == 1)  #(batch_size, N)
+        gt_area_zero = (gt_boxes_w == 1) & (gt_boxes_h == 1)                 #(batch_size, K)
 
         boxes = anchors.view(batch_size, N, 1, 4).expand(batch_size, N, K, 4)
         query_boxes = gt_boxes.view(batch_size, 1, K, 4).expand(batch_size, N, K, 4)
 
-        iw = torch.min(boxes[:,:,2], query_boxes[:,:,2]) - torch.max(boxes[:,:,0], query_boxes[:,:,0]) + 1
+        # every anchor copmared every gt_box    (batch_size, N, K)
+        iw = torch.min(boxes[:,:,:,2], query_boxes[:,:,:,2]) - torch.max(boxes[:,:,:,0], query_boxes[:,:,:,0]) + 1
         iw[iw<0] = 0
-        ih = torch.min(boxes[:,:,3], query_boxes[:,:,3]) - torch.max(boxes[:,:,1], query_boxes[:,:,1]) + 1
+        ih = torch.min(boxes[:,:,:,3], query_boxes[:,:,:,3]) - torch.max(boxes[:,:,:,1], query_boxes[:,:,:,1]) + 1
         ih[ih<0] = 0
 
-        ua = anchors_area + gt_boxes_area - (iw * ih)
-        overlaps = iw * ih / ua
+        ua = anchors_area + gt_boxes_area - (iw * ih)  #(batch_size, N, K)
+        overlaps = iw * ih / ua                        #(batch_size, N, K)
 
         # mask the overlap here.
         overlaps.masked_fill_(gt_area_zero.view(batch_size, 1, K).expand(batch_size, N, K), 0)
