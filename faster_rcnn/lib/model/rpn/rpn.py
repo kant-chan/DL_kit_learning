@@ -72,8 +72,10 @@ class _RPN(nn.Module):
 
         cfg_key = 'TRAIN' if self.training else 'TEST'
 
-        rois = self.RPN_proposal((rpn_cls_prob.data, rpn_bbox_pred.data,
-                                  im_info, cfg_key))
+        rois = self.RPN_proposal((rpn_cls_prob.data,
+                                  rpn_bbox_pred.data,
+                                  im_info,
+                                  cfg_key))
 
         self.rpn_loss_cls = 0
         self.rpn_loss_bbox = 0

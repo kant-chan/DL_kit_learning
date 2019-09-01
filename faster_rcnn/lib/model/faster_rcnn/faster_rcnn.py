@@ -8,7 +8,7 @@ from model.utils.config import cfg
 from model.rpn.rpn import _RPN
 from model.rpn.proposal_target_layer_cascade import _ProposalTargetLayer
 #TODO
-from model.roi_layers import ROIAlign, ROIPool
+# from model.roi_layers import ROIAlign, ROIPool
 
 
 class _fasterRCNN(nn.Module):

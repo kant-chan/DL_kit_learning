@@ -52,7 +52,7 @@ def display(cordlist):
         # print('draw ',cord)
         color=(np.random.randint(127, 255), np.random.randint(127, 255), np.random.randint(127, 255))
         # print('color is ', color)
-        cv2.rectangle(back, (int(cord[0]), int(cord[1])), (int(cord[2]),int(cord[3])), color, 1)
+        cv2.rectangle(back, (int(cord[0]), int(cord[1])), (int(cord[2]),int(cord[3])), color, 2)
         # cv2.putText(back, str(cord[4]), (int(cord[0]), int(cord[1])), cv2.FONT_ITALIC, 0.5, color, 1)
     plt.imshow(back)
     plt.show()
@@ -67,8 +67,8 @@ if __name__ == '__main__':
                       [28, 130, 134, 302]])
     scores = np.array([0.9, 0.79, 0.63, 0.55, 0.3])
     # display(boxes)
-    t_boxes = torch.from_numpy(boxes)
-    t_scores = torch.from_numpy(scores)
-    thresh = 0.5
+    t_boxes = torch.from_numpy(boxes).float()
+    t_scores = torch.from_numpy(scores).float()
+    thresh = 0.1
     keep_ids = nms(t_boxes, t_scores, thresh)
     display(boxes[keep_ids.numpy()])

@@ -15,9 +15,7 @@ class _AnchorTargetLayer(nn.Module):
         super(_AnchorTargetLayer, self).__init__()
 
         self._feat_stride = feat_stride
-        self._scales = scales
-        anchor_scales = scales
-        self._anchors = torch.from_numpy(generate_anchors(scales=np.array(anchor_scales), ratios=np.array(ratios))).float()
+        self._anchors = torch.from_numpy(generate_anchors(scales=np.array(scales), ratios=np.array(ratios))).float()
         self._num_anchors = self._anchors.size(0)
 
         # allow boxes to sit over the edge by a small amount
@@ -119,7 +117,7 @@ class _AnchorTargetLayer(nn.Module):
                 disable_inds = bg_inds[rand_num[:bg_inds.size(0)-num_bg]]
                 labels[i][disable_inds] = -1
 
-        offset = torch.arange(0, batch_size)*gt_boxes.size(1)
+        offset = torch.arange(0, batch_size) * gt_boxes.size(1)
 
         argmax_overlaps = argmax_overlaps + offset.view(batch_size, 1).type_as(argmax_overlaps)
         bbox_targets = _compute_targets_batch(anchors, gt_boxes.view(-1,5)[argmax_overlaps.view(-1), :].view(batch_size, -1, 5))
@@ -145,24 +143,22 @@ class _AnchorTargetLayer(nn.Module):
 
         outputs = []
 
-        labels = labels.view(batch_size, height, width, A).permute(0,3,1,2).contiguous()
+        labels = labels.view(batch_size, height, width, A).permute(0, 3, 1, 2).contiguous()
         labels = labels.view(batch_size, 1, A * height, width)
         outputs.append(labels)
 
-        bbox_targets = bbox_targets.view(batch_size, height, width, A*4).permute(0,3,1,2).contiguous()
+        bbox_targets = bbox_targets.view(batch_size, height, width, A*4).permute(0, 3, 1, 2).contiguous()
         outputs.append(bbox_targets)
 
         anchors_count = bbox_inside_weights.size(1)
         bbox_inside_weights = bbox_inside_weights.view(batch_size,anchors_count,1).expand(batch_size, anchors_count, 4)
 
-        bbox_inside_weights = bbox_inside_weights.contiguous().view(batch_size, height, width, 4*A)\
-                            .permute(0,3,1,2).contiguous()
+        bbox_inside_weights = bbox_inside_weights.contiguous().view(batch_size, height, width, 4*A).permute(0, 3, 1, 2).contiguous()
 
         outputs.append(bbox_inside_weights)
 
         bbox_outside_weights = bbox_outside_weights.view(batch_size,anchors_count,1).expand(batch_size, anchors_count, 4)
-        bbox_outside_weights = bbox_outside_weights.contiguous().view(batch_size, height, width, 4*A)\
-                            .permute(0,3,1,2).contiguous()
+        bbox_outside_weights = bbox_outside_weights.contiguous().view(batch_size, height, width, 4*A).permute(0, 3, 1, 2).contiguous()
         outputs.append(bbox_outside_weights)
 
         return outputs
