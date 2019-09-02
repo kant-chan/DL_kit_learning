@@ -44,7 +44,7 @@ class _RPN(nn.Module):
         self.RPN_anchor_target = _AnchorTargetLayer(self.feat_stride, self.anchor_scales, self.anchor_ratios)
         
         self.rpn_loss_cls = 0
-        self.rpn_loss_bbox = 0
+        self.rpn_loss_box = 0
 
     @staticmethod
     def reshape(x, d):
@@ -61,8 +61,8 @@ class _RPN(nn.Module):
         batch_size = base_feat.size(0)
 
         rpn_conv1 = F.relu(self.RPN_Conv(base_feat), inplace=True)
+        
         rpn_cls_score = self.RPN_cls_score(rpn_conv1)
-
         rpn_cls_score_reshape = self.reshape(rpn_cls_score, 2)  # (b, 2, 9*H, W)
         rpn_cls_prob_reshape = F.softmax(rpn_cls_score_reshape, 1)
         rpn_cls_prob = self.reshape(rpn_cls_prob_reshape, self.nc_score_out) # (b, 18, H, W)

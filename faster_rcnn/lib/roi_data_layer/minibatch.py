@@ -41,6 +41,7 @@ def get_minibatch(roidb, num_classes):
     gt_boxes[:,0:4] = roidb[0]['boxes'][gt_inds,:] * im_scales[0]
     gt_boxes[:,4] = roidb[0]['gt_classes'][gt_inds]
     blobs['gt_boxes'] = gt_boxes
+    # array([[h, w, im_scale]])
     blobs['im_info'] = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
 
     blobs['img_id'] = roidb[0]['img_id']
@@ -54,7 +55,7 @@ def _get_image_blob(roidb, scale_inds):
     processed_ims = []
     im_scales = []
     for i in range(num_images):
-        im = imread(roidb[i]['image'])   # im.shape -> (h,w,c)   type(im) -> np.array   dtype -> uint8
+        im = imread(roidb[i]['image'])   # im.shape->(h,w,c)  type(im)->np.array  dtype->uint8
 
         if len(im.shape) == 2:
             im = im[:,:,np.newaxis]
@@ -68,6 +69,7 @@ def _get_image_blob(roidb, scale_inds):
         
         target_size = cfg.TRAIN.SCALES[scale_inds[i]]
         # array([[[102.9801, 115.9465, 122.7717]]])  600  1000
+        # prep_im_for_blob: resize the min of width and height, remain ratio same
         im, im_scale = prep_im_for_blob(im, cfg.PIXEL_MEANS, target_size, cfg.TRAIN.MAX_SIZE)
 
         im_scales.append(im_scale)

@@ -27,6 +27,7 @@ class RoibatchLoader(data.Dataset):
         # len is data_size [0, 0, 0, ...]
         self.ratio_list_batch = torch.Tensor(self.data_size).zero_()
         num_batch = int(np.ceil(len(ratio_index) / batch_size))
+        # one batch, convert all the images to same ratio (w/h)
         for i in range(num_batch):
             left_idx = i * batch_size
             right_idx = min((i + 1) * batch_size - 1, self.data_size - 1)
@@ -40,12 +41,20 @@ class RoibatchLoader(data.Dataset):
             self.ratio_list_batch[left_idx:(right_idx+1)] = target_ratio
 
     def __getitem__(self, index):
+        # print(index)
         if self.training:
             index_ratio = int(self.ratio_index[index])
         else:
             index_ratio = index
         
         minibatch_db = [self._roidb[index_ratio]]  # [{}]
+        # blobs:
+        # {
+        #     "data":,
+        #     "gt_boxes":
+        #     "im_info":,
+        #     "img_id":
+        # }
         blobs = get_minibatch(minibatch_db, self._num_classes)
         data = torch.from_numpy(blobs['data'])
         im_info = torch.from_numpy(blobs['im_info'])
@@ -125,11 +134,7 @@ class RoibatchLoader(data.Dataset):
             # based on the ratio, padding the image.
             if ratio < 1:
                 # this means that data_width < data_height
-                trim_size = int(np.floor(data_width / ratio))
-
-                padding_data = torch.FloatTensor(int(np.ceil(data_width / ratio)), \
-                                                data_width, 3).zero_()
-
+                padding_data = torch.FloatTensor(int(np.ceil(data_width / ratio)), data_width, 3).zero_()
                 padding_data[:data_height,:,:] = data[0]
                 # update im_info
                 im_info[0, 0] = padding_data.size(0)
@@ -137,8 +142,7 @@ class RoibatchLoader(data.Dataset):
             elif ratio > 1:
                 # this means that data_width > data_height
                 # if the image need to crop.
-                padding_data = torch.FloatTensor(data_height, \
-                                                int(np.ceil(data_height * ratio)), 3).zero_()
+                padding_data = torch.FloatTensor(data_height, int(np.ceil(data_height * ratio)), 3).zero_()
                 padding_data[:,:data_width,:] = data[0]
                 im_info[0, 1] = padding_data.size(1)
             else:
@@ -151,6 +155,7 @@ class RoibatchLoader(data.Dataset):
                 im_info[0, 1] = trim_size
 
             # check the bounding box:
+            # because ratio and trim size, this is neccessary
             not_keep = (gt_boxes[:,0] == gt_boxes[:,2]) | (gt_boxes[:,1] == gt_boxes[:,3])
             keep = torch.nonzero(not_keep == 0).view(-1)
 
@@ -162,10 +167,11 @@ class RoibatchLoader(data.Dataset):
             else:
                 num_boxes = 0
 
-                # permute trim_data to adapt to downstream processing
+            # permute trim_data to adapt to downstream processing
             padding_data = padding_data.permute(2, 0, 1).contiguous()
             im_info = im_info.view(3)
 
+            # return padding_data, im_info, gt_boxes_padding, num_boxes, ratio
             return padding_data, im_info, gt_boxes_padding, num_boxes
 
         else:

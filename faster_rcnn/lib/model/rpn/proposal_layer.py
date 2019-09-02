@@ -31,7 +31,7 @@ class _ProposalLayer(nn.Module):
         im_info = inpt[2]
         cfg_key = inpt[3]
 
-        pre_nms_topN = cfg[cfg_key].RPN_PRE_NMS_TOP_N     # train: 12000, test: 6000
+        pre_nms_topN = cfg[cfg_key].RPN_PRE_NMS_TOP_N    # train: 12000, test: 6000
         post_nms_topN = cfg[cfg_key].RPN_POST_NMS_TOP_N  # train: 2000, test: 300
         nms_thresh = cfg[cfg_key].RPN_NMS_THRESH         # train: 0.7, test: 0.7
         min_size = cfg[cfg_key].RPN_MIN_SIZE             # train: 8, test: 16

@@ -19,7 +19,7 @@ from model.faster_rcnn.vgg16 import vgg16
 # from model.faster_rcnn.resnet import resnet
 
 ###### test ######
-
+DEBUG = True
 ##################
 
 
@@ -164,8 +164,8 @@ if __name__ == '__main__':
     if args.cuda:
         cfg.CUDA = True
     
-    # if args.net == 'vgg16':
-    #     fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
+    if args.net == 'vgg16':
+        fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
     # elif args.net == 'res101':
     #     fasterRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
     # elif args.net == 'res50':
@@ -175,28 +175,42 @@ if __name__ == '__main__':
     # else:
     #     print('network is not defined')
 
-    # fasterRCNN.create_architecture()
+    fasterRCNN.create_architecture()
 
     lr = cfg.TRAIN.LEARNING_RATE
     lr = args.lr
 
     params = []
 
-    ########## test
-    print('==========> test')
+    if DEBUG:
+        '''
+        im_data:
+            size --> torch.Size([batch_size, 3, 600, 904])
+        im_info:
+            tensor([[600.0000, 904.0000, 1.8072],
+                    [600.0000, 904.0000, 1.8072],
+                    ...
+                    batch_size
+                    ...]])
+        gt_boxes:
+            size --> torch.Size([batch_size, 20, 5])
+        num_boxes:
+            tensor([ 4,  2, 13,  1,  2,  1,  2,  4,  4,  7])
+        '''
+        print('==========> test')
+        # print(dataset.data_size, dataset.batch_size)
+        # print(dataset.ratio_list_batch[:30])
+        for i, v in enumerate(dataloader):
+            if i == 0:
+                print("padding_data size:", v[0].size()) # padding_data
+                print("im_info:", v[1])        # im_info
+                print("gt_boxes:", v[2].size())        # gt_boxes
+                print("num_boxes:", v[3])        # num_boxes
 
-    print(dataset.data_size, dataset.batch_size)
-    print(dataset.ratio_list_batch[:30])
-    # for i, v in enumerate(dataloader):
-    #     if i == 0:
-    #         print(v[0].size()) # padding_data
-    #         print(v[1])        # im_info
-    #         print(v[2].size())        # gt_boxes
-    #         print(v[3])        # num_boxes
-    #         break
-    # for i, sam in enumerate(sampler_batch):
-    #     if i == 0:
-    #         print(sam, sam.size())
-    #         break
-    print('==========> test end')
-    ###############
+                # print("ratio:", v[4])
+                break
+        # for i, sam in enumerate(sampler_batch):
+        #     if i == 0:
+        #         print(sam, sam.size())
+        #         break
+        print('==========> test end')
