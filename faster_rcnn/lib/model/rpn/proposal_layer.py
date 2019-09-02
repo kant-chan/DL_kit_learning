@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 
 from model.utils.config import cfg
 from .generate_anchors import generate_anchors

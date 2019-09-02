@@ -132,6 +132,9 @@ def bbox_overlaps_batch(anchors, gt_boxes):
         anchors_area_zero = (anchors_boxes_w == 1) & (anchors_boxes_h == 1)  #(batch_size, N)
         gt_area_zero = (gt_boxes_w == 1) & (gt_boxes_h == 1)                 #(batch_size, K)
 
+        gt_area_zero = (gt_boxes_w == 1) & (gt_boxes_h == 1)
+        anchors_area_zero = (anchors_boxes_w == 1) & (anchors_boxes_h == 1)
+
         boxes = anchors.view(batch_size, N, 1, 4).expand(batch_size, N, K, 4)
         query_boxes = gt_boxes.view(batch_size, 1, K, 4).expand(batch_size, N, K, 4)
 

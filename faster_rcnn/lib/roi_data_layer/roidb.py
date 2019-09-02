@@ -74,6 +74,7 @@ def rank_roidb_ratio(roidb):
 
         ratio_list.append(ratio)
     ratio_list = np.array(ratio_list)
+    # ascending
     ratio_index = np.argsort(ratio_list)
     return ratio_list[ratio_index], ratio_index
 
@@ -118,6 +119,18 @@ def combined_roidb(imdb_names, training=True):
 
     roidb = get_roidb(imdb_names)
 
+    '''imdb --> pascal_voc de instance
+       classes: voc 21 classes(include background)
+       roidb: 
+       {
+            'boxes': (num_objs, 4),
+            'gt_classes': (num_objs),
+            'gt_overlaps': (num_objs, num_classes),
+            'seg_areas': (num_objs),
+            'gt_ishards': (num_objs),
+            'flipped': False,
+        }
+    '''
     imdb = get_imdb(imdb_names)
 
     if training:
