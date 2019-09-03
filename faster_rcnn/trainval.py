@@ -164,8 +164,8 @@ if __name__ == '__main__':
     if args.cuda:
         cfg.CUDA = True
     
-    if args.net == 'vgg16':
-        fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
+    # if args.net == 'vgg16':
+    #     fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
     # elif args.net == 'res101':
     #     fasterRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
     # elif args.net == 'res50':
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     # else:
     #     print('network is not defined')
 
-    fasterRCNN.create_architecture()
+    # fasterRCNN.create_architecture()
 
     lr = cfg.TRAIN.LEARNING_RATE
     lr = args.lr

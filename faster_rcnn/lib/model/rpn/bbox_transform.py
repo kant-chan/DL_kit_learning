@@ -129,11 +129,10 @@ def bbox_overlaps_batch(anchors, gt_boxes):
         gt_boxes_h = gt_boxes[:,:,3] - gt_boxes[:,:,1] + 1
         gt_boxes_area = (gt_boxes_w * gt_boxes_h).view(batch_size, 1, K)   #(batch_size, 1, K)
 
+        # because the gt_boxes has the MAX_NUM_GT_BOXES(20), if the actual num
+        # of gt_boxes less than MAX_NUM_GT_BOXES, rest will be filled 0.
         anchors_area_zero = (anchors_boxes_w == 1) & (anchors_boxes_h == 1)  #(batch_size, N)
         gt_area_zero = (gt_boxes_w == 1) & (gt_boxes_h == 1)                 #(batch_size, K)
-
-        gt_area_zero = (gt_boxes_w == 1) & (gt_boxes_h == 1)
-        anchors_area_zero = (anchors_boxes_w == 1) & (anchors_boxes_h == 1)
 
         boxes = anchors.view(batch_size, N, 1, 4).expand(batch_size, N, K, 4)
         query_boxes = gt_boxes.view(batch_size, 1, K, 4).expand(batch_size, N, K, 4)
@@ -149,7 +148,7 @@ def bbox_overlaps_batch(anchors, gt_boxes):
 
         # mask the overlap here.
         overlaps.masked_fill_(gt_area_zero.view(batch_size, 1, K).expand(batch_size, N, K), 0)
-        overlaps.masked_fill_(anchors_area_zero.view(batch_size, N, 1).expand(batch_size, N, K), -1)
+        overlaps.masked_fill_(anchors_area_zero.view(batch_size, N, 1).expand(batch_size, N, K), -1) # why filled with -1
 
     elif anchors.dim() == 3:
         N = anchors.size(1)
