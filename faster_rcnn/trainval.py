@@ -98,6 +98,12 @@ def parse_args():
         help='learning rate decay ratio',
         default=0.1,
         type=float)
+    parser.add_argument('--o',
+        dest='optimizer',
+        help='training optimizer',
+        default='sgd',
+        type=str)
+    parser.add_argument()
 
     args = parser.parse_args()
     return args
@@ -163,24 +169,6 @@ if __name__ == '__main__':
 
     if args.cuda:
         cfg.CUDA = True
-    
-    # if args.net == 'vgg16':
-    #     fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
-    # elif args.net == 'res101':
-    #     fasterRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
-    # elif args.net == 'res50':
-    #     fasterRCNN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
-    # elif args.net == 'res152':
-    #     fasterRCNN = resnet(imdb.classes, 152, pretrained=True, class_agnostic=args.class_agnostic)
-    # else:
-    #     print('network is not defined')
-
-    # fasterRCNN.create_architecture()
-
-    lr = cfg.TRAIN.LEARNING_RATE
-    lr = args.lr
-
-    params = []
 
     if DEBUG:
         '''
@@ -214,3 +202,49 @@ if __name__ == '__main__':
         #         print(sam, sam.size())
         #         break
         print('==========> test end')
+
+    if args.net == 'vgg16':
+        fasterRCNN = vgg16(imdb.classes, pretrained=True, class_agnostic=args.class_agnostic)
+    # elif args.net == 'res101':
+    #     fasterRCNN = resnet(imdb.classes, 101, pretrained=True, class_agnostic=args.class_agnostic)
+    # elif args.net == 'res50':
+    #     fasterRCNN = resnet(imdb.classes, 50, pretrained=True, class_agnostic=args.class_agnostic)
+    # elif args.net == 'res152':
+    #     fasterRCNN = resnet(imdb.classes, 152, pretrained=True, class_agnostic=args.class_agnostic)
+    # else:
+    #     print('network is not defined')
+
+    fasterRCNN.create_architecture()
+
+    lr = cfg.TRAIN.LEARNING_RATE
+    lr = args.lr
+
+    params = []
+    for key, value in dict(fasterRCNN.named_parameters()).items():
+        if value.requires_grad:
+            if 'bias' in key:
+                params += [{
+                    'params': [value],
+                    'lr': lr * (cfg.TRAIN.DOUBLE_BIAS + 1),
+                    'weight_decay': cfg.TRAIN.BIAS_DECAY and cfg.TRAIN.WEIGHT_DECAY or 0,
+                }]
+            else:
+                params += [{
+                    'params': [value],
+                    'lr': lr,
+                    'weight_decay': cfg.TRAIN.WEIGHT_DECAY
+                }]
+
+    if args.cuda:
+        fasterRCNN.to(device)
+
+    if args.optimizer == 'adam':
+        lr = lr * 0.1
+        optimizer = torch.optim.Adam(params)
+    elif args.optimizer == 'sgd':
+        optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
+
+
+    iters_per_epoch = int(train_size / args.batch_size)
+
+    for epoch in range(args.)
