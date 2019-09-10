@@ -17,6 +17,7 @@ from roi_data_layer.roidb import combined_roidb
 from roi_data_layer.roibatch_loader import RoibatchLoader
 from model.faster_rcnn.vgg16 import vgg16
 # from model.faster_rcnn.resnet import resnet
+from model.utils.net_utils import clip_gradient
 
 ###### test ######
 DEBUG = True
@@ -103,7 +104,16 @@ def parse_args():
         help='training optimizer',
         default='sgd',
         type=str)
-    parser.add_argument()
+    parser.add_argument('--epochs',
+        dest='max_epochs',
+        help='number of epochs to train',
+        default=20,
+        type=int)
+    parser.add_argument('--disp_interval',
+        dest='disp_interval',
+        help='number of iterations to display',
+        default=100,
+        type=int)
 
     args = parser.parse_args()
     return args
@@ -237,6 +247,8 @@ if __name__ == '__main__':
 
     if args.cuda:
         fasterRCNN.to(device)
+    else:
+        fasterRCNN.to(device)
 
     if args.optimizer == 'adam':
         lr = lr * 0.1
@@ -247,4 +259,43 @@ if __name__ == '__main__':
 
     iters_per_epoch = int(train_size / args.batch_size)
 
-    for epoch in range(args.)
+    for epoch in range(args.max_epochs + 1):
+
+        loss_temp = 0
+
+        data_iter = iter(dataloader)
+        for step in range(iters_per_epoch):
+            data = next(data_iter)
+
+            fasterRCNN.zero_grad()
+
+            rois, cls_prob, bbox_pred, \
+            rpn_loss_cls, rpn_loss_box, \
+            RCNN_loss_cls, RCNN_loss_bbox, \
+            rois_label = fasterRCNN(data[0], data[1], data[2], data[3])
+
+            loss = rpn_loss_cls.mean() + rpn_loss_box.mean() + \
+                RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
+            loss_temp += loss.item()
+
+            optimizer.zero_grad()
+            loss.backward()
+            if args.net == 'vgg16':
+                clip_gradient(fasterRCNN, 10.0)
+            optimizer.step()
+
+            if step % args.disp_interval == 0:
+                if step > 0:
+                    loss_temp /= (args.disp_interval + 1)
+
+                loss_rpn_cls = rpn_loss_cls.item()
+                loss_rpn_box = rpn_loss_box.item()
+                loss_rcnn_cls = RCNN_loss_cls.item()
+                loss_rcnn_box = RCNN_loss_bbox.item()
+                fg_cnt = torch.sum(rois_label.data.ne(0))
+                bg_cnt = rois_label.data.numel() - fg_cnt
+
+                print('[epoch %2d][iter %4d/%4d] loss: %.4f, lr: %.2e'.format(
+                    epoch, step, iters_per_epoch, loss_temp, lr))
+
+                loss_temp = 0
