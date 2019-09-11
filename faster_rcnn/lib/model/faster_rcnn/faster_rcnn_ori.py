@@ -24,7 +24,7 @@ class _fasterRCNN(nn.Module):
 
         # define rpn
         self.RCNN_rpn = _RPN(self.dout_base_model) # 512
-        # self.RCNN_proposal_target = _ProposalTargetLayer(self.n_classes)
+        self.RCNN_proposal_target = _ProposalTargetLayer(self.n_classes)
 
         # self.RCNN_roi_pool = ROIPool((cfg.POOLING_SIZE, cfg.POOLING_SIZE), 1.0/16.0)
         # self.RCNN_roi_align = ROIAlign((cfg.POOLING_SIZE, cfg.POOLING_SIZE), 1.0/16.0, 0)
@@ -42,61 +42,59 @@ class _fasterRCNN(nn.Module):
         rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
 
         # if it is training phrase, then use ground truth bboxes for refining
-        # if self.training:
-        #     rois, rois_label, rois_target, rois_inside_ws, rois_outside_ws = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
+        if self.training:
+            rois, rois_label, rois_target, rois_inside_ws, rois_outside_ws = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
 
-        #     rois_label = rois_label.view(-1).long()
-        #     rois_target = rois_target.view(-1, rois_target.size(2))
-        #     rois_inside_ws = rois_inside_ws.view(-1, rois_inside_ws.size(2))
-        #     rois_outside_ws = rois_outside_ws.view(-1, rois_outside_ws.size(2))
-        # else:
-        #     rois_label = None
-        #     rois_target = None
-        #     rois_inside_ws = None
-        #     rois_outside_ws = None
-        #     rpn_loss_cls = 0
-        #     rpn_loss_bbox = 0
+            rois_label = rois_label.view(-1).long()
+            rois_target = rois_target.view(-1, rois_target.size(2))
+            rois_inside_ws = rois_inside_ws.view(-1, rois_inside_ws.size(2))
+            rois_outside_ws = rois_outside_ws.view(-1, rois_outside_ws.size(2))
+        else:
+            rois_label = None
+            rois_target = None
+            rois_inside_ws = None
+            rois_outside_ws = None
+            rpn_loss_cls = 0
+            rpn_loss_bbox = 0
         
-        # # do roi pooling based on predicted rois
-        # if cfg.POOLING_MODE == 'align':
-        #     # pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
-        #     pass
-        # elif cfg.POOLING_MODE == 'pool':
-        #     # pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1, 5))
-        #     pass
+        # do roi pooling based on predicted rois
+        if cfg.POOLING_MODE == 'align':
+            # pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
+            pass
+        elif cfg.POOLING_MODE == 'pool':
+            # pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1, 5))
+            pass
         
         # feed pooled features to top model
-        # pooled_feat = self._head_to_tail(pooled_faet)
+        pooled_feat = self._head_to_tail(pooled_faet)
 
         # compute bbox offset
-        # bbox_pred = self.RCNN_bbox_pred(pooled_feat)
-        # if self.training and not self.class_agnostic:
-        #     # select the corresponding columns according to roi labels
-        #     bbox_pred_view = bbox_pred.view(bbox_pred.size(0), int(bbox_pred.size(1) / 4), 4)
-        #     bbox_pred_select = torch.gather(bbox_pred_view, 1, rois_label.view(rois_label.size(0), 1, 1).expand(rois_label.size(0), 1, 4))
-        #     bbox_pred = bbox_pred_select.squeeze(1)
+        bbox_pred = self.RCNN_bbox_pred(pooled_feat)
+        if self.training and not self.class_agnostic:
+            # select the corresponding columns according to roi labels
+            bbox_pred_view = bbox_pred.view(bbox_pred.size(0), int(bbox_pred.size(1) / 4), 4)
+            bbox_pred_select = torch.gather(bbox_pred_view, 1, rois_label.view(rois_label.size(0), 1, 1).expand(rois_label.size(0), 1, 4))
+            bbox_pred = bbox_pred_select.squeeze(1)
 
-        # # compute object classification probability
-        # cls_score = self.RCNN_cls_score(pooled_feat)
-        # cls_prob = F.softmax(cls_score, 1)
+        # compute object classification probability
+        cls_score = self.RCNN_cls_score(pooled_feat)
+        cls_prob = F.softmax(cls_score, 1)
 
-        # RCNN_loss_cls = 0
-        # RCNN_loss_bbox = 0
+        RCNN_loss_cls = 0
+        RCNN_loss_bbox = 0
 
-        # if self.training:
-        #     # classification loss
-        #     RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
+        if self.training:
+            # classification loss
+            RCNN_loss_cls = F.cross_entropy(cls_score, rois_label)
 
-        #     # bounding box regression L1 loss
-        #     RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
+            # bounding box regression L1 loss
+            RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
 
 
-        # cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
-        # bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
+        cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
+        bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)
 
-        # return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label
-
-        return rois, rpn_loss_cls, rpn_loss_bbox
+        return rois, cls_prob, bbox_pred, rpn_loss_cls, rpn_loss_bbox, RCNN_loss_cls, RCNN_loss_bbox, rois_label
 
     def _init_weights(self):
         def normal_init(m, mean, stddev, truncated=False):

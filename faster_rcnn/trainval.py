@@ -269,13 +269,9 @@ if __name__ == '__main__':
 
             fasterRCNN.zero_grad()
 
-            rois, cls_prob, bbox_pred, \
-            rpn_loss_cls, rpn_loss_box, \
-            RCNN_loss_cls, RCNN_loss_bbox, \
-            rois_label = fasterRCNN(data[0], data[1], data[2], data[3])
+            rois, rpn_loss_cls, rpn_loss_box = fasterRCNN(data[0], data[1], data[2], data[3])
 
-            loss = rpn_loss_cls.mean() + rpn_loss_box.mean() + \
-                RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
+            loss = rpn_loss_cls.mean() + rpn_loss_box.mean()
             loss_temp += loss.item()
 
             optimizer.zero_grad()
@@ -290,12 +286,8 @@ if __name__ == '__main__':
 
                 loss_rpn_cls = rpn_loss_cls.item()
                 loss_rpn_box = rpn_loss_box.item()
-                loss_rcnn_cls = RCNN_loss_cls.item()
-                loss_rcnn_box = RCNN_loss_bbox.item()
-                fg_cnt = torch.sum(rois_label.data.ne(0))
-                bg_cnt = rois_label.data.numel() - fg_cnt
 
-                print('[epoch %2d][iter %4d/%4d] loss: %.4f, lr: %.2e'.format(
+                print('[epoch {:2d}][iter {:4d}/{:4d}] loss: {:.4f}, lr: {:.2e}'.format(
                     epoch, step, iters_per_epoch, loss_temp, lr))
 
                 loss_temp = 0

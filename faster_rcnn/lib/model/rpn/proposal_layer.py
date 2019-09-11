@@ -63,7 +63,7 @@ class _ProposalLayer(nn.Module):
                                              shift_x.ravel(),
                                              shift_y.ravel())).transpose())
         
-        shifts = shifts.contiguous(),type_as(scores).float() # torch.float32
+        shifts = shifts.contiguous().type_as(scores).float() # torch.float32
 
         A = self._num_anchors  # len(scales) * len(anchors) = 9
         K = shifts.size(0)     # W_feat * H_feat
@@ -111,11 +111,11 @@ class _ProposalLayer(nn.Module):
             # - apply nms (e.g. threshhold=0.7)
             # - take after_nms_topN (e.g. 300)
             # - return the top proposals (-> RoIs top)
-            keep_idx_i = nms(proposals_single, scores_single.squeeze(1), nms_thresh)
+            keep_idx_i = nms.nms(proposals_single, scores_single.squeeze(1), nms_thresh)
             keep_idx_i = keep_idx_i.long().view(-1)
 
             if post_nms_topN > 0:
-                keep_idx_i = keep_idx_i[:,post_nms_topN]
+                keep_idx_i = keep_idx_i[:post_nms_topN]
             proposals_single = proposals_single[keep_idx_i,:]
             scores_single = scores_single[keep_idx_i,:]
 

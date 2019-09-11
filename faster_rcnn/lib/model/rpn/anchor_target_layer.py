@@ -59,8 +59,8 @@ class _AnchorTargetLayer(nn.Module):
 
         keep = ((all_anchors[:, 0] >= -self._allowed_border) &
                 (all_anchors[:, 1] >= -self._allowed_border) &
-                (all_anchors[:, 2] < long(im_info[0][1]) + self._allowed_border) &
-                (all_anchors[:, 3] < long(im_info[0][0]) + self._allowed_border))
+                (all_anchors[:, 2] < int(im_info[0][1]) + self._allowed_border) &
+                (all_anchors[:, 3] < int(im_info[0][0]) + self._allowed_border))
 
         inds_inside = torch.nonzero(keep).view(-1)
 
