@@ -39,6 +39,8 @@ class _fasterRCNN(nn.Module):
         # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
+        print('base_feat size:', base_feat.size())
+
         rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
 
         # if it is training phrase, then use ground truth bboxes for refining
