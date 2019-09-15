@@ -2,6 +2,9 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
+import _init_path
+from model.utils.config import cfg
+
 def display(im_data, gt_boxes, num_boxes):
     '''
     im_data: (batch_size, C, H, W)
@@ -22,6 +25,12 @@ def display(im_data, gt_boxes, num_boxes):
     # im_data = im_data * 255
     # im_data = im_data.astype(np.uint8)
     # cfg.PIXEL_MEANS
-    print(im_data.dtype, np.max(im_data), np.min(im_data))
+    im_data += cfg.PIXEL_MEANS
+    # print(im_data.dtype, np.max(im_data), np.min(im_data))
+    for i in  range(num_boxes):
+        box = gt_boxes[i]
+        print(box)
+        color=(np.random.randint(127, 255), np.random.randint(127, 255), np.random.randint(127, 255))
+        im_data = cv2.rectangle(im_data, (int(box[0]), int(box[1])), (int(box[2]),int(box[3])), color, 2)
 
     cv2.imwrite('./test.jpg', im_data)
