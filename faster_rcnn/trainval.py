@@ -19,7 +19,7 @@ from model.faster_rcnn.vgg16 import vgg16
 # from model.faster_rcnn.resnet import resnet
 from model.utils.net_utils import clip_gradient
 
-from model.utils.visualize import display
+from model.utils.visualize import display, vis_gen_anchors
 
 ###### test ######
 DEBUG = True
@@ -208,9 +208,10 @@ if __name__ == '__main__':
                 print("num_boxes:", v[3])        # num_boxes
 
                 ############
-                print('========>', v[0][0].numpy().shape, type(v[0].size(0)))
-                print('========>', type(v[3][0].item()))
-                display(v[0], v[2], v[3])
+                print('im_data as numpy shape:', v[0][0].numpy().shape, type(v[0].size(0)))
+                print('[]', type(v[3][0].item()))
+                # display(v[0], v[2], v[3])
+                vis_gen_anchors(v[0])
                 ############
                 # print("ratio:", v[4])
                 break
@@ -266,48 +267,50 @@ if __name__ == '__main__':
 
     iters_per_epoch = int(train_size / args.batch_size)
 
-    # for epoch in range(args.max_epochs + 1):
+    for epoch in range(args.max_epochs + 1):
 
-    #     loss_temp = 0
+        loss_temp = 0
 
-    #     data_iter = iter(dataloader)
-    #     for step in range(iters_per_epoch):
-    #         data = next(data_iter)
+        data_iter = iter(dataloader)
+        for step in range(iters_per_epoch):
+            data = next(data_iter)
 
-    #         data[0] = data[0].to(device)
-    #         data[1] = data[1].to(device)
-    #         data[2] = data[2].to(device)
-    #         data[3] = data[3].to(device)
+            data[0] = data[0].to(device)
+            data[1] = data[1].to(device)
+            data[2] = data[2].to(device)
+            data[3] = data[3].to(device)
 
-    #         fasterRCNN.zero_grad()
+            fasterRCNN.zero_grad()
 
-    #         if DEBUG:
-    #             print('********* {} *********'.format(step))
-    #             print(data[0].size())
-    #             print(data[1])
-    #             print(data[2].size())
-    #             print(data[3])
-    #         # forward pipeline:
-    #         #   faster_rcnn --> rpn --> proposal_layer --> anchor_target_layer
-    #         rois, rpn_loss_cls, rpn_loss_box = fasterRCNN(data[0], data[1], data[2], data[3])
+            if DEBUG:
+                print('********* {} *********'.format(step))
+                print(data[0].size())
+                print(data[1])
+                print(data[2].size())
+                print(data[3])
+            # forward pipeline:
+            #   faster_rcnn --> rpn --> proposal_layer --> anchor_target_layer
+            rois, rpn_loss_cls, rpn_loss_box = fasterRCNN(data[0], data[1], data[2], data[3])
 
-    #         loss = rpn_loss_cls.mean() + rpn_loss_box.mean()
-    #         loss_temp += loss.item()
+            break
+        break
+            # loss = rpn_loss_cls.mean() + rpn_loss_box.mean()
+            # loss_temp += loss.item()
 
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         if args.net == 'vgg16':
-    #             clip_gradient(fasterRCNN, 10.0)
-    #         optimizer.step()
+            # optimizer.zero_grad()
+            # loss.backward()
+            # if args.net == 'vgg16':
+            #     clip_gradient(fasterRCNN, 10.0)
+            # optimizer.step()
 
-    #         if step % args.disp_interval == 0:
-    #             if step > 0:
-    #                 loss_temp /= (args.disp_interval + 1)
+            # if step % args.disp_interval == 0:
+            #     if step > 0:
+            #         loss_temp /= (args.disp_interval + 1)
 
-    #             loss_rpn_cls = rpn_loss_cls.item()
-    #             loss_rpn_box = rpn_loss_box.item()
+            #     loss_rpn_cls = rpn_loss_cls.item()
+            #     loss_rpn_box = rpn_loss_box.item()
 
-    #             print('[epoch {:2d}][iter {:4d}/{:4d}] loss: {:.4f}, lr: {:.2e}'.format(
-    #                 epoch, step, iters_per_epoch, loss_temp, lr))
+            #     print('[epoch {:2d}][iter {:4d}/{:4d}] loss: {:.4f}, lr: {:.2e}'.format(
+            #         epoch, step, iters_per_epoch, loss_temp, lr))
 
-    #             loss_temp = 0
+            #     loss_temp = 0

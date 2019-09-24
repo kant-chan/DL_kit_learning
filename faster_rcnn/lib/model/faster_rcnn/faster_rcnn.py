@@ -31,7 +31,7 @@ class _fasterRCNN(nn.Module):
 
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes):
-        batch_size = im_data.data
+        batch_size = im_data.size(0)
         im_info = im_info.data
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data
