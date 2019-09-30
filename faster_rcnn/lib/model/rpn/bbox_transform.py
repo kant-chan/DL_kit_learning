@@ -43,6 +43,10 @@ def bbox_transform_batch(ex_rois, gt_rois):
     return targets
 
 def bbox_transform_inv(boxes, deltas):
+    '''
+    boxes: (B, H*W*9, 4)
+    deltas: (B, H*W*9, 4)
+    '''
     widths = boxes[:,:,2] - boxes[:,:,0] + 1.0
     heights = boxes[:,:,3] - boxes[:,:,1] + 1.0
     ctr_xs = boxes[:,:,0] + 0.5 * widths

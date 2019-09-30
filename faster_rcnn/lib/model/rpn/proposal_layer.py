@@ -58,6 +58,7 @@ class _ProposalLayer(nn.Module):
         #  [1, 0, 1, 0],
         #  [2, 0, 2, 0],
         #  ... so on]
+        # (W*H, 4)
         shifts = torch.from_numpy(np.vstack((shift_x.ravel(),
                                              shift_y.ravel(),
                                              shift_x.ravel(),
