@@ -80,11 +80,11 @@ class _RPN(nn.Module):
         self.rpn_loss_cls = 0
         self.rpn_loss_box = 0
 
-        # # generating training labels and build the rpn loss
-        # if self.training:
-        #     assert gt_boxes is not None
+        # generating training labels and build the rpn loss
+        if self.training:
+            assert gt_boxes is not None
 
-        #     rpn_data = self.RPN_anchor_target((rpn_cls_score.data, gt_boxes, im_info, num_boxes))
+            rpn_data = self.RPN_anchor_target((rpn_cls_score.data, gt_boxes, im_info, num_boxes))
 
         #     # compute classification loss
         #     rpn_cls_score = rpn_cls_score_reshape.permute(0, 2, 3, 1).contiguous().view(batch_size, -1, 2)

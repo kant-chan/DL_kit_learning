@@ -19,7 +19,7 @@ from model.faster_rcnn.vgg16 import vgg16
 # from model.faster_rcnn.resnet import resnet
 from model.utils.net_utils import clip_gradient
 
-from model.utils.visualize import display, vis_gen_anchors
+from model.utils.visualize import display, vis_gen_anchors, vis_proposals
 
 ###### test ######
 DEBUG = True
@@ -211,7 +211,7 @@ if __name__ == '__main__':
                 print('im_data as numpy shape:', v[0][0].numpy().shape, type(v[0].size(0)))
                 print('[]', type(v[3][0].item()))
                 # display(v[0], v[2], v[3])
-                vis_gen_anchors(v[0])
+                # vis_gen_anchors(v[0])
                 ############
                 # print("ratio:", v[4])
                 break
@@ -291,6 +291,10 @@ if __name__ == '__main__':
             # forward pipeline:
             #   faster_rcnn --> rpn --> proposal_layer --> anchor_target_layer
             rois, rpn_loss_cls, rpn_loss_box = fasterRCNN(data[0], data[1], data[2], data[3])
+
+            print('**************')
+            print(rois.size())
+            # vis_proposals(data[0], rois)
 
             break
         break

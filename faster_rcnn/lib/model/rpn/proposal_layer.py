@@ -85,7 +85,7 @@ class _ProposalLayer(nn.Module):
         scores = scores.view(batch_size, -1)             # (batch_size, H*W*9)
 
         # convert anchors into proposals via bbox transformations
-        proposals = bbox_transform_inv(anchors, bbox_deltas)
+        proposals = bbox_transform_inv(anchors, bbox_deltas) # (batch_size, H*W*9, 4)
 
         # clip predicted boxes to image
         proposals = clip_boxes(proposals, im_info, batch_size)

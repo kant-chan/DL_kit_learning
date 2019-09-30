@@ -53,4 +53,16 @@ def vis_gen_anchors(im_data):
         color=(0, 0, 255)
         im_data = cv2.rectangle(im_data, (int(box[0]), int(box[1])), (int(box[2]),int(box[3])), color, 2)
     cv2.imwrite('./test.jpg', im_data)
-        
+
+def vis_proposals(im_data, rois):
+    im_data = im_data[0].numpy()
+    im_data = im_data.transpose((1, 2, 0))
+    im_data += cfg.PIXEL_MEANS
+
+    rois_ = rois[0]
+    for i in range(rois_.size(0)):
+        box = rois_[i]
+        # print(box)
+        color=(0, 0, 255)
+        im_data = cv2.rectangle(im_data, (int(box[0].item()), int(box[1].item())), (int(box[2].item()),int(box[3].item())), color, 2)
+    cv2.imwrite('./test_proposals.jpg', im_data)
