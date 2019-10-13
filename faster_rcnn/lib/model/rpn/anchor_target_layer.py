@@ -27,7 +27,7 @@ class _AnchorTargetLayer(nn.Module):
         apply predicted bbox deltas at cell i to each of the 9 anchors
         filter out-of-image anchors
         '''
-        rpn_cls_score = inpt[0]
+        rpn_cls_score = inpt[0]   #(B, 18, H, W)
         gt_boxes = inpt[1]
         im_info = inpt[2]
         num_boxes = inpt[3]

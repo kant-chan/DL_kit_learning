@@ -294,7 +294,7 @@ if __name__ == '__main__':
 
             print('**************')
             print(rois.size())
-            # vis_proposals(data[0], rois)
+            vis_proposals(data[0], rois)
 
             break
         break
