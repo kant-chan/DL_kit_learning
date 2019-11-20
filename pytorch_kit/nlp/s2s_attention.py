@@ -66,10 +66,8 @@ class AttnDecoderRNN(nn.Module):
 
         attn_weights = F.softmax(self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
         attn_applied = torch.bmm(attn_weights.unsqueeze(0), enc_outputs.unsqueeze(0))
-
         output = torch.cat((embedded[0], attn_applied[0]), 1)
         output = self.attn_combine(output).unsqueeze(0)
-
         output = F.relu(output)
         output, hidden = self.gru(output, hidden)
         output = F.log_softmax(self.out(output[0]), dim=1)
@@ -184,7 +182,7 @@ def train(input_tensor, target_tensor, enc, dec,
     dec_hidden = enc_hidden
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
 
-    if use_teacher_forcing:
+    if True:
         for dec_i in range(target_length):
             dec_output, dec_hidden, dec_attention = dec(dec_input, dec_hidden, enc_outputs)
             loss += criterion(dec_output, target_tensor[dec_i])
@@ -208,6 +206,9 @@ def train_iters(input_lang, output_lang, pairs, enc, dec, n_iters, print_every=1
         target_tensor = training_pair[1]   # e.g. [5, 1]
 
         loss = train(input_tensor, target_tensor, enc, dec, enc_optimizer, dec_optimizer, criterion)
+
+        break
+
         print_loss_total += loss
 
         if it % print_every == 0:
