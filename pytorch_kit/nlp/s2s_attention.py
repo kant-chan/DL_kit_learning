@@ -188,8 +188,49 @@ def train(input_tensor, target_tensor, enc, dec,
             loss += criterion(dec_output, target_tensor[dec_i])
             dec_input = target_tensor[dec_i]
     else:
-        pass
-    
+        for dec_i in range(target_length):
+            dec_output, dec_hidden, dec_attention = dec(dec_input, dec_hidden, enc_outputs)
+            topv, topi = dec_output.topk(1)
+            dec_input = topi.squeeze().detach()
+
+            loss += criterion(dec_output, target_tensor[dec_i])
+            if dec_input.item() == EOS_token:
+                break
+
+    loss.backward()
+    enc_optimizer.step()
+    dec_optimizer.step()
+    return loss.item() / target_length
+
+def evaluate(enc, dec, sentence, max_length=MAX_LENGTH):
+    with torch.no_grad():
+        input_tensor = tensor_from_sentence(input_lang, sentence)
+        input_length = input_tensor.size()[0]
+        enc_hidden = enc.init_hidden()
+        enc_outputs = torch.zeros(max_length, enc.hidden_size, device=device)
+
+        for enc_i in range(input_length):
+            enc_output, enc_hidden = enc(input_tensor[enc_i], enc_hidden)
+            enc_outputs[enc_i] += enc_output[0,0]
+        
+        dec_input = torch.tensor([[SOS_token]], device=device)
+        dec_hidden = enc_hidden
+        
+        dec_words = []
+        dec_attentions = torch.zeros(max_length, max_length)
+
+        for dec_i in range(max_length):
+            dec_output, dec_hidden, dec_attention = dec(dec_input, dec_hidden, enc_outputs)
+            dec_attentions[dec_i] = dec_attention.data
+            topv, topi = dec_output.data.topk(1)
+            if topi.item() == EOS_token:
+                dec_words.append('<EOS>')
+                break
+            else:
+                dec_words.append(output_lang.index2word[topi.item()])
+            dec_input = topi.squeeze().detach()
+        
+        return dec_words, dec_attentions[:dec_i+1]
 
 def train_iters(input_lang, output_lang, pairs, enc, dec, n_iters, print_every=1000, learning_rate=.01):
     print_loss_total = 0
