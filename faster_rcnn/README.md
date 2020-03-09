@@ -1,1 +1,0 @@
-faster rcnn implemented by pytorch
