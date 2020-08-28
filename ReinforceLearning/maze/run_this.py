@@ -10,19 +10,14 @@ def update():
         while True:
             # fresh env
             env.render()
-
             # RL choose action based on observation
             action = RL.choose_action(str(observation))
-
             # RL take action and get next observation and reward
             observation_, reward, done = env.step(action)
-
             # RL learn from this transition
             RL.learn(str(observation), action, reward, str(observation_))
-
             # swap observation
             observation = observation_
-
             # break while loop when end of this episode
             if done:
                 break
@@ -38,10 +33,10 @@ def update_sarsa():
 
         while True:
             env.render()
-            action_ = RL.choose_action(str(observation))
             observation_, reward, done = env.step(action)
-            RL.learn(str(observation), action, reward, str(observation_))
-            observation = observation_
+            action_ = RL.choose_action(str(observation_))
+            RL.learn(str(observation), action, reward, str(observation_), action_)
+            observation, action = observation_, action_
             action = action_
 
             if done:
@@ -50,8 +45,6 @@ def update_sarsa():
     print('game over')
     print(RL.q_table)
     env.destroy()
-
-
 
 
 if __name__ == "__main__":

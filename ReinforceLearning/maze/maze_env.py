@@ -1,7 +1,7 @@
 """
 sudo yum install python3-tk tk-devel
-
 sudo apt-get install python3-tk tk-dev
+brew install tcl-tk
 """
 
 import numpy as np
