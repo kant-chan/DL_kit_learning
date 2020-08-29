@@ -30,7 +30,9 @@ def update_sarsa():
     for episode in range(100):
         observation = env.reset()
         action = RL.choose_action(str(observation))
-
+        
+        # lambda 版本记得每回合清零
+        # RL.eligibility_trace *= 0
         while True:
             env.render()
             observation_, reward, done = env.step(action)
