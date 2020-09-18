@@ -8,13 +8,13 @@ class ObjectDict(dict):
             value = ObjectDict(value)
         return value
 
-if __name__ == '__main__':
-    a = {'name': 'muzhi'}
-    # print(getattr(a, 'name'))    # AttributeError: 'dict' object has no attribute 'name'
-    od = ObjectDict(asf={'a': 1}, d=True)
-    print(od.asf, od.asf.a)
-    print(od.d)
-    print(getattr(od.asf, 'a'))
+# if __name__ == '__main__':
+#     a = {'name': 'muzhi'}
+#     # print(getattr(a, 'name'))    # AttributeError: 'dict' object has no attribute 'name'
+#     od = ObjectDict(asf={'a': 1}, d=True)
+#     print(od.asf, od.asf.a)
+#     print(od.d)
+#     print(getattr(od.asf, 'a'))
 
 
 #############################
@@ -112,3 +112,23 @@ class Algo(object):
 #     print algo
 #     print algo.obj_attr
 #     algo.bar()
+
+"""
+magic method
+"""
+
+class Test:
+    def __getattr__(self, name):
+        print('__getattr__')
+
+    def __getattribute__(self, name):
+        print('__getattribute__')
+
+    def __setattr__(self, name, value):
+        print('__setattr__')
+
+    def __delattr__(self, name):
+        print('__delattr__')
+
+t=Test()
+t.x
